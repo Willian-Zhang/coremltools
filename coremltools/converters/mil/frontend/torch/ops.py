@@ -6892,9 +6892,13 @@ def scaled_dot_product_attention(context, node):
 
     # When len(inputs) == 7, the inputs are (q, k, v, attn_mask, dropout, is_causal, scale)
     if len(inputs) == 7 and inputs[6] is not None:
-        raise NotImplementedError(
-            "scaled_dot_product_attention op: scale parameter is not handled."
-        )
+        real_factor = 1 / _math.sqrt(q.shape[-1])
+        if _math.isclose(real_factor, inputs[6].val, rel_tol=0.1):
+            pass
+        else:
+            raise NotImplementedError(
+                "scaled_dot_product_attention op: scale parameter is not handled."
+            )
 
     if attn_mask is not None and is_causal:
         raise ValueError(
