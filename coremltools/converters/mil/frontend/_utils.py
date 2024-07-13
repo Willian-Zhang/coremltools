@@ -513,7 +513,7 @@ def solve_binary_generic_einsum(parsed_vectors, a_var, b_var, name) -> Var:
 
 
 def _decompose_scaled_dot_product_attention(
-    q: Var, k: Var, v: Var, mask: Var, name: str, before_op: Optional[Operation] = None
+    q: Var, k: Var, v: Var, mask: Var, name: str, before_op: Optional[Operation] = None, scaler: Optional[Var] = None
 ) -> Var:
     # scale the query input
     embed_size = q.shape[-1]
@@ -524,7 +524,7 @@ def _decompose_scaled_dot_product_attention(
         )
 
     q, k, v = promote_input_dtypes([q, k, v])
-    multiplicative_scale_factor = 1 / math.sqrt(embed_size)
+    multiplicative_scale_factor = 1 / math.sqrt(embed_size) if scaler is None else scaler.val
     if types.builtin_to_string(q.dtype) == "fp16":
         multiplicative_scale_factor = np.float16(multiplicative_scale_factor)
     q = mb.mul(x=q, y=multiplicative_scale_factor, before_op=before_op)

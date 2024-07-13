@@ -9,6 +9,7 @@ import numbers
 import re
 from collections.abc import Iterable
 from typing import Any, Dict, List, Optional, Tuple, Union
+import warnings
 
 import numpy as _np
 import numpy as np
@@ -6891,14 +6892,9 @@ def scaled_dot_product_attention(context, node):
     is_causal = False if len(inputs) < 6 else inputs[5].val
 
     # When len(inputs) == 7, the inputs are (q, k, v, attn_mask, dropout, is_causal, scale)
-    if len(inputs) == 7 and inputs[6] is not None:
-        real_factor = 1 / _math.sqrt(q.shape[-1])
-        if _math.isclose(real_factor, inputs[6].val, rel_tol=0.1):
-            pass
-        else:
-            raise NotImplementedError(
-                "scaled_dot_product_attention op: scale parameter is not handled."
-            )
+    scaler = None if len(inputs) < 7 else inputs[6]
+    if len(inputs) == 7:
+        warnings.warn(f"Using scaler")
 
     if attn_mask is not None and is_causal:
         raise ValueError(
@@ -6972,7 +6968,7 @@ def scaled_dot_product_attention(context, node):
 
     # For ios18-, scaled_dot_product_attention has to be decomposed
     else:
-        res = _utils._decompose_scaled_dot_product_attention(q, k, v, mask, node.name)
+        res = _utils._decompose_scaled_dot_product_attention(q, k, v, mask, node.name, scaler=scaler)
 
     context.add(res)
 
